@@ -9,7 +9,9 @@ from __future__ import annotations
 
 import csv
 import io
+import json
 import logging
+from pathlib import Path
 from typing import Optional
 
 from zhinan.collector import BaseCollector
@@ -346,13 +348,24 @@ EXTRA_SCHOOLS = [
     {"name": "厦门理工学院", "province": "福建", "level": "", "city": "厦门"},
 ]
 
-ALL_SCHOOLS = BUILTIN_SCHOOLS + EXTRA_SCHOOLS
+# 加载额外高校数据（约2700+所，覆盖全国各类高校和高职院校）
+_EXTRA_JSON = Path(__file__).parent / "schools_extra.json"
+if _EXTRA_JSON.exists():
+    with open(_EXTRA_JSON, encoding="utf-8") as _f:
+        EXTRA_JSON_SCHOOLS = json.load(_f)
+else:
+    EXTRA_JSON_SCHOOLS = []
+    logger.warning("schools_extra.json not found, only using built-in data")
+
+ALL_SCHOOLS = BUILTIN_SCHOOLS + EXTRA_SCHOOLS + EXTRA_JSON_SCHOOLS
+
+# 注释：全国中等职业学校（中专/技校/职高）约8000+所，未全列
 
 
 class SchoolCollector(BaseCollector):
     """高校信息采集器。
 
-    数据来源：教育部全国高等学校名单（内建约450所核心高校）
+    数据来源：教育部全国高等学校名单（内建数据约3100+所，含985/211/双一流/普通本科/高职院校）
     """
 
     name = "schools"
