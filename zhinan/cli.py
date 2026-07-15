@@ -64,6 +64,12 @@ def _init_db(db_path: str) -> None:
     asyncio.run(_init())
 
 
+def _get_db_backend(db_path: str = "data/zhinan.db"):
+    """获取数据库后端实例。"""
+    from zhinan.db import get_backend
+    return get_backend("sqlite", db_path=db_path)
+
+
 def _run_collect(source: str) -> None:
     """执行数据采集。"""
     import asyncio
@@ -73,7 +79,7 @@ def _run_collect(source: str) -> None:
     from zhinan.collector.macro import MacroCollector
 
     collectors = {
-        "schools": SchoolCollector(),
+        "schools": SchoolCollector(db_backend=_get_db_backend()),
         "scores": ScoreCollector(),
         "examiners": ExaminerCollector(),
         "macro": MacroCollector(),
@@ -83,10 +89,14 @@ def _run_collect(source: str) -> None:
         if source == "all":
             for name, col in collectors.items():
                 logger.info("Starting collector: %s", name)
+                if hasattr(col, 'db') and col.db:
+                    await col.db.connect()
                 count = await col.collect()
                 logger.info("Collector %s done: %d records", name, count)
         else:
             col = collectors[source]
+            if hasattr(col, 'db') and col.db:
+                await col.db.connect()
             count = await col.collect()
             logger.info("Collector %s done: %d records", source, count)
 
