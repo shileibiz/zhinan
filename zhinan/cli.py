@@ -28,8 +28,12 @@ def main():
     collect_parser = sub.add_parser("collect", help="执行数据采集")
     collect_parser.add_argument(
         "source", nargs="?", default="all",
-        choices=["all", "schools", "scores", "examiners", "macro"],
+        choices=["all", "schools", "majors", "scores", "examiners", "macro"],
         help="采集源",
+    )
+    collect_parser.add_argument(
+        "--province", default=None,
+        help="指定省份（仅对 scores 有效）",
     )
 
     # serve
@@ -43,7 +47,7 @@ def main():
     if args.command == "init-db":
         _init_db(args.db_path)
     elif args.command == "collect":
-        _run_collect(args.source)
+        _run_collect(args.source, args.province)
     elif args.command == "serve":
         _run_server(args.host, args.port, args.reload)
 
@@ -70,9 +74,10 @@ def _get_db_backend(db_path: str = "data/zhinan.db"):
     return get_backend("sqlite", db_path=db_path)
 
 
-def _run_collect(source: str) -> None:
+def _run_collect(source: str, province: str | None = None) -> None:
     """执行数据采集。"""
     import asyncio
+    from zhinan.collector.majors import MajorCollector
     from zhinan.collector.schools import SchoolCollector
     from zhinan.collector.scores import ScoreCollector
     from zhinan.collector.examiners import ExaminerCollector
@@ -80,7 +85,8 @@ def _run_collect(source: str) -> None:
 
     collectors = {
         "schools": SchoolCollector(db_backend=_get_db_backend()),
-        "scores": ScoreCollector(),
+        "majors": MajorCollector(db_backend=_get_db_backend()),
+        "scores": ScoreCollector(db_backend=_get_db_backend()),
         "examiners": ExaminerCollector(),
         "macro": MacroCollector(),
     }
@@ -91,13 +97,19 @@ def _run_collect(source: str) -> None:
                 logger.info("Starting collector: %s", name)
                 if hasattr(col, 'db') and col.db:
                     await col.db.connect()
-                count = await col.collect()
+                if province and hasattr(col, 'collect_province'):
+                    count = await col.collect_province(province)
+                else:
+                    count = await col.collect()
                 logger.info("Collector %s done: %d records", name, count)
         else:
             col = collectors[source]
             if hasattr(col, 'db') and col.db:
                 await col.db.connect()
-            count = await col.collect()
+            if province and hasattr(col, 'collect_province'):
+                count = await col.collect_province(province)
+            else:
+                count = await col.collect()
             logger.info("Collector %s done: %d records", source, count)
 
     asyncio.run(run())

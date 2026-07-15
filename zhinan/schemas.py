@@ -69,7 +69,7 @@ CREATE TABLE IF NOT EXISTS admission_plans (
 CREATE TABLE IF NOT EXISTS admission_scores (
     id INTEGER PRIMARY KEY AUTOINCREMENT,
     school_id INTEGER NOT NULL REFERENCES schools(id),
-    major_id INTEGER NOT NULL REFERENCES majors(id),
+    major_id INTEGER REFERENCES majors(id),
     year INTEGER NOT NULL,
     province TEXT NOT NULL,
     batch TEXT,
