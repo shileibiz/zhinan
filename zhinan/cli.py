@@ -28,7 +28,7 @@ def main():
     collect_parser = sub.add_parser("collect", help="执行数据采集")
     collect_parser.add_argument(
         "source", nargs="?", default="all",
-        choices=["all", "schools", "majors", "scores", "examiners", "macro", "enrollment", "gender"],
+        choices=["all", "schools", "majors", "scores", "examiners", "macro", "enrollment", "gender", "employment"],
         help="采集源",
     )
     collect_parser.add_argument(
@@ -83,6 +83,7 @@ def _run_collect(source: str, province: str | None = None) -> None:
     from zhinan.collector.examiners import ExaminerCollector
     from zhinan.collector.macro import MacroCollector
     from zhinan.collector.gender import MajorGenderCollector
+    from zhinan.collector.employment import EmploymentCollector
 
     collectors = {
         "schools": SchoolCollector(db_backend=_get_db_backend()),
@@ -92,6 +93,7 @@ def _run_collect(source: str, province: str | None = None) -> None:
         "macro": MacroCollector(),
         "enrollment": EnrollmentCollector(db_backend=_get_db_backend()),
         "gender": MajorGenderCollector(db_backend=_get_db_backend()),
+        "employment": EmploymentCollector(db_backend=_get_db_backend()),
     }
 
     async def run():
