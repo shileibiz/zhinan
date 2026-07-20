@@ -16,10 +16,31 @@ class RankConverter:
     async def score_to_rank(
         self, score: int, year: int, province: str, subject_type: str
     ) -> Optional[int]:
-        """分数 → 位次。"""
+        """分数 → 位次（精确匹配，若找不到则返回更高分数段的最小位次）。"""
+        # 1) 精确匹配
         row = await self._db.fetch_one(
             """SELECT rank FROM rank_score_tables
                WHERE year = ? AND province = ? AND subject_type = ? AND score = ?""",
+            (year, province, subject_type, score),
+        )
+        if row:
+            return row["rank"]
+
+        # 2) 取大于该分数的最小位次（向上取最接近）
+        row = await self._db.fetch_one(
+            """SELECT rank FROM rank_score_tables
+               WHERE year = ? AND province = ? AND subject_type = ? AND score > ?
+               ORDER BY score ASC LIMIT 1""",
+            (year, province, subject_type, score),
+        )
+        if row:
+            return row["rank"]
+
+        # 3) 取小于该分数的最大位次（向下取最接近）
+        row = await self._db.fetch_one(
+            """SELECT rank FROM rank_score_tables
+               WHERE year = ? AND province = ? AND subject_type = ? AND score < ?
+               ORDER BY score DESC LIMIT 1""",
             (year, province, subject_type, score),
         )
         return row["rank"] if row else None

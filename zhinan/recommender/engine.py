@@ -50,11 +50,11 @@ class RecommendEngine:
 
         # 冲 — 位次 90%~95%
         chong_rows = await self._db.fetch_all(
-            """SELECT s.name AS school_name, m.name AS major_name,
+            """SELECT s.name AS school_name, COALESCE(m.name, '（全校）') AS major_name,
                       a.min_score, a.avg_score, a.min_rank, a.year
                FROM admission_scores a
                JOIN schools s ON s.id = a.school_id
-               JOIN majors m ON m.id = a.major_id
+               LEFT JOIN majors m ON m.id = a.major_id
                WHERE a.year = ? AND a.province = ?
                  AND a.min_rank BETWEEN ? AND ?
                ORDER BY a.min_rank ASC
@@ -74,11 +74,11 @@ class RecommendEngine:
 
         # 稳 — 位次 95%~105%
         wen_rows = await self._db.fetch_all(
-            """SELECT s.name AS school_name, m.name AS major_name,
+            """SELECT s.name AS school_name, COALESCE(m.name, '（全校）') AS major_name,
                       a.min_score, a.avg_score, a.min_rank, a.year
                FROM admission_scores a
                JOIN schools s ON s.id = a.school_id
-               JOIN majors m ON m.id = a.major_id
+               LEFT JOIN majors m ON m.id = a.major_id
                WHERE a.year = ? AND a.province = ?
                  AND a.min_rank BETWEEN ? AND ?
                ORDER BY a.min_rank ASC
@@ -98,11 +98,11 @@ class RecommendEngine:
 
         # 保 — 位次 110%~130%
         bao_rows = await self._db.fetch_all(
-            """SELECT s.name AS school_name, m.name AS major_name,
+            """SELECT s.name AS school_name, COALESCE(m.name, '（全校）') AS major_name,
                       a.min_score, a.avg_score, a.min_rank, a.year
                FROM admission_scores a
                JOIN schools s ON s.id = a.school_id
-               JOIN majors m ON m.id = a.major_id
+               LEFT JOIN majors m ON m.id = a.major_id
                WHERE a.year = ? AND a.province = ?
                  AND a.min_rank BETWEEN ? AND ?
                ORDER BY a.min_rank ASC
@@ -143,13 +143,13 @@ class RecommendEngine:
         upper = int(rank * 1.30)
 
         rows = await self._db.fetch_all(
-            """SELECT s.name AS school_name, m.name AS major_name,
+            """SELECT s.name AS school_name, COALESCE(m.name, '（全校）') AS major_name,
                       a.min_score, a.avg_score, a.min_rank, a.year
                FROM admission_scores a
                JOIN schools s ON s.id = a.school_id
-               JOIN majors m ON m.id = a.major_id
+               LEFT JOIN majors m ON m.id = a.major_id
                WHERE a.year = ? AND a.province = ?
-                 AND m.name LIKE ?
+                 AND (m.name LIKE ? OR m.name IS NULL)
                  AND a.min_rank BETWEEN ? AND ?
                ORDER BY ABS(a.min_rank - ?) ASC
                LIMIT ?""",
@@ -184,11 +184,11 @@ class RecommendEngine:
     ) -> list[RecommendItem]:
         """没有位次表时的降级推荐：直接按分数区间查询。"""
         rows = await self._db.fetch_all(
-            """SELECT s.name AS school_name, m.name AS major_name,
+            """SELECT s.name AS school_name, COALESCE(m.name, '（全校）') AS major_name,
                       a.min_score, a.avg_score, a.min_rank, a.year
                FROM admission_scores a
                JOIN schools s ON s.id = a.school_id
-               JOIN majors m ON m.id = a.major_id
+               LEFT JOIN majors m ON m.id = a.major_id
                WHERE a.year = ? AND a.province = ?
                  AND a.min_score BETWEEN ? AND ?
                ORDER BY a.min_score DESC
@@ -213,13 +213,13 @@ class RecommendEngine:
     ) -> list[RecommendItem]:
         """没有位次表时的降级推荐：分数区间 + 专业名。"""
         rows = await self._db.fetch_all(
-            """SELECT s.name AS school_name, m.name AS major_name,
+            """SELECT s.name AS school_name, COALESCE(m.name, '（全校）') AS major_name,
                       a.min_score, a.avg_score, a.min_rank, a.year
                FROM admission_scores a
                JOIN schools s ON s.id = a.school_id
-               JOIN majors m ON m.id = a.major_id
+               LEFT JOIN majors m ON m.id = a.major_id
                WHERE a.year = ? AND a.province = ?
-                 AND m.name LIKE ?
+                 AND (m.name LIKE ? OR m.name IS NULL)
                  AND a.min_score BETWEEN ? AND ?
                ORDER BY a.min_score DESC
                LIMIT ?""",
