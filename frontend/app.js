@@ -3,7 +3,11 @@
    ============================================================== */
 
 // API base URL — in production, change to your deployed API URL
-const API_BASE = 'http://localhost:8000/api/v1';
+// Auto-detect API base: use VPS in production, localhost in dev
+const DEV_API = 'http://localhost:8000/api/v1';
+const PROD_API = 'http://192.236.244.24:8000/api/v1';
+const API_BASE = window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1' 
+    ? DEV_API : PROD_API;
 
 // Province list (from API or static)
 let provinceList = [];
