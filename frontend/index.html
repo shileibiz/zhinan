@@ -1,0 +1,243 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>高考志愿指南</title>
+<link rel="stylesheet" href="/style.css">
+</head>
+<body>
+<div id="app">
+  <header>
+    <div class="header-inner">
+      <h1>🎯 高考志愿指南</h1>
+      <p class="subtitle">2022–2024 全国高考录取数据查询</p>
+    </div>
+  </header>
+
+  <nav id="tabs">
+    <button class="tab active" data-tab="schools">🏫 学校查询</button>
+    <button class="tab" data-tab="scores">📊 录取分数</button>
+    <button class="tab" data-tab="recommend">🎯 冲稳保推荐</button>
+    <button class="tab" data-tab="rank">📈 一分一段表</button>
+  </nav>
+
+  <main>
+    <!-- ============================================================ -->
+    <!-- 1. 学校查询 -->
+    <!-- ============================================================ -->
+    <section id="tab-schools" class="tab-content active">
+      <div class="card">
+        <div class="filters">
+          <select id="school-province" aria-label="省份筛选">
+            <option value="">所有省份</option>
+          </select>
+          <select id="school-level" aria-label="学校层次">
+            <option value="">所有层次</option>
+            <option value="985">985</option>
+            <option value="211">211</option>
+            <option value="双一流">双一流</option>
+          </select>
+          <input type="text" id="school-keyword" placeholder="搜索学校名称..." aria-label="搜索学校名称">
+          <button id="school-search" class="btn-primary">🔍 搜索</button>
+        </div>
+        <div class="result-info">
+          <span id="school-count"></span>
+        </div>
+        <div class="table-wrap">
+          <table id="school-table">
+            <thead>
+              <tr>
+                <th>学校名称</th>
+                <th>省份</th>
+                <th>城市</th>
+                <th>层次</th>
+                <th>招生人数</th>
+                <th>操作</th>
+              </tr>
+            </thead>
+            <tbody id="school-tbody">
+              <tr><td colspan="6" class="empty">请点击搜索按钮查询</td></tr>
+            </tbody>
+          </table>
+        </div>
+        <div class="pagination" id="school-pagination"></div>
+      </div>
+    </section>
+
+    <!-- ============================================================ -->
+    <!-- 2. 录取分数 -->
+    <!-- ============================================================ -->
+    <section id="tab-scores" class="tab-content">
+      <div class="card">
+        <div class="filters">
+          <input type="text" id="score-school-id" placeholder="学校 ID" aria-label="学校 ID" style="width:100px">
+          <select id="score-province" aria-label="省份筛选">
+            <option value="">所有省份</option>
+          </select>
+          <input type="number" id="score-year" placeholder="年份(如2024)" aria-label="年份" style="width:130px">
+          <button id="score-search" class="btn-primary">🔍 查询</button>
+        </div>
+        <div class="result-info">
+          <span id="score-count"></span>
+        </div>
+        <div class="table-wrap">
+          <table id="score-table">
+            <thead>
+              <tr>
+                <th>学校</th>
+                <th>专业</th>
+                <th>年份</th>
+                <th>省份</th>
+                <th>批次</th>
+                <th>最高分</th>
+                <th>最低分</th>
+                <th>平均分</th>
+                <th>最低位次</th>
+              </tr>
+            </thead>
+            <tbody id="score-tbody">
+              <tr><td colspan="9" class="empty">请选择筛选条件后查询</td></tr>
+            </tbody>
+          </table>
+        </div>
+        <div class="pagination" id="score-pagination"></div>
+      </div>
+    </section>
+
+    <!-- ============================================================ -->
+    <!-- 3. 冲稳保推荐 -->
+    <!-- ============================================================ -->
+    <section id="tab-recommend" class="tab-content">
+      <div class="card">
+        <div class="filters recommend-filters">
+          <div class="filter-group">
+            <label>分数</label>
+            <input type="number" id="rec-score" placeholder="如 585" aria-label="分数" min="0" max="750">
+          </div>
+          <div class="filter-group">
+            <label>省份</label>
+            <select id="rec-province" aria-label="省份">
+              <option value="">请选择省份</option>
+            </select>
+          </div>
+          <div class="filter-group">
+            <label>年份</label>
+            <select id="rec-year" aria-label="年份">
+              <option value="2024">2024</option>
+              <option value="2023" selected>2023</option>
+              <option value="2022">2022</option>
+            </select>
+          </div>
+          <div class="filter-group">
+            <label>科类</label>
+            <select id="rec-subject" aria-label="科类">
+              <option value="物理">物理</option>
+              <option value="历史">历史</option>
+              <option value="综合">综合</option>
+            </select>
+          </div>
+          <div class="filter-group">
+            <label>意向专业（可选）</label>
+            <input type="text" id="rec-major" placeholder="如 计算机" aria-label="意向专业">
+          </div>
+          <button id="rec-search" class="btn-primary">🎯 开始推荐</button>
+        </div>
+        <div class="result-info">
+          <span id="rec-count"></span>
+        </div>
+        <p class="rec-hint">💡 推荐逻辑：依据往年位次，位次高 0~10% 为「冲」、±5% 为「稳」、低 10~30% 为「保」</p>
+        <div class="table-wrap">
+          <table id="rec-table">
+            <thead>
+              <tr>
+                <th>学校</th>
+                <th>专业</th>
+                <th>概率</th>
+                <th>最低分</th>
+                <th>平均分</th>
+                <th>最低位次</th>
+                <th>年份</th>
+              </tr>
+            </thead>
+            <tbody id="rec-tbody">
+              <tr><td colspan="7" class="empty">输入分数和省份后点击推荐</td></tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </section>
+
+    <!-- ============================================================ -->
+    <!-- 4. 一分一段表 -->
+    <!-- ============================================================ -->
+    <section id="tab-rank" class="tab-content">
+      <div class="card">
+        <div class="filters rank-filters">
+          <div class="filter-group">
+            <label>分数</label>
+            <input type="number" id="rank-score" placeholder="如 585" aria-label="分数" min="0" max="750">
+          </div>
+          <div class="filter-group">
+            <label>省份</label>
+            <select id="rank-province" aria-label="省份">
+              <option value="">请选择省份</option>
+            </select>
+          </div>
+          <div class="filter-group">
+            <label>年份</label>
+            <select id="rank-year" aria-label="年份">
+              <option value="2024">2024</option>
+              <option value="2023" selected>2023</option>
+              <option value="2022">2022</option>
+            </select>
+          </div>
+          <div class="filter-group">
+            <label>科类</label>
+            <select id="rank-subject" aria-label="科类">
+              <option value="物理">物理</option>
+              <option value="历史">历史</option>
+              <option value="综合">综合</option>
+            </select>
+          </div>
+          <button id="rank-search" class="btn-primary">📈 查位次</button>
+        </div>
+        <div id="rank-result" class="rank-result hidden">
+          <div class="rank-card">
+            <span class="rank-label">你的位次</span>
+            <span class="rank-value" id="rank-value-display">—</span>
+          </div>
+        </div>
+        <div class="result-info">
+          <span id="rank-count"></span>
+        </div>
+        <div class="table-wrap">
+          <table id="rank-table">
+            <thead>
+              <tr>
+                <th>分数</th>
+                <th>位次</th>
+                <th>年份</th>
+                <th>省份</th>
+                <th>科类</th>
+              </tr>
+            </thead>
+            <tbody id="rank-tbody">
+              <tr><td colspan="5" class="empty">输入分数后查询位次</td></tr>
+            </tbody>
+          </table>
+        </div>
+        <div class="pagination" id="rank-pagination"></div>
+      </div>
+    </section>
+  </main>
+
+  <footer>
+    <p>数据来源：各省教育考试院 2022–2024 · 仅供志愿填报参考</p>
+    <p class="api-info">API 状态：<span id="api-status" class="status-checking">检查中...</span></p>
+  </footer>
+</div>
+
+<script src="/app.js"></script>
+</body>
+</html>

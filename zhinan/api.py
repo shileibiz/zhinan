@@ -5,6 +5,7 @@ from __future__ import annotations
 from typing import Optional
 
 from fastapi import APIRouter, Depends, FastAPI, HTTPException, Query
+from fastapi.middleware.cors import CORSMiddleware
 
 from zhinan.db import DatabaseBackend, get_backend
 from zhinan.models import (
@@ -23,6 +24,15 @@ app = FastAPI(
     title="志愿指南 API",
     description="高考志愿填报数据平台",
     version="0.1.0",
+)
+
+# CORS — allow frontend from any origin
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=["*"],
+    allow_credentials=True,
+    allow_methods=["*"],
+    allow_headers=["*"],
 )
 
 router = APIRouter(prefix="/api/v1", tags=["志愿指南"])
@@ -114,6 +124,67 @@ async def get_school_majors(
     """
     rows = await db.fetch_all(sql, (school_id,))
     return {"school_id": school_id, "majors": rows}
+
+
+# ---------------------------------------------------------------------------
+# 一分一段表查询
+# ---------------------------------------------------------------------------
+
+@router.get("/rank-score")
+async def query_rank_score(
+    score: Optional[int] = Query(None, description="分数"),
+    rank: Optional[int] = Query(None, description="位次"),
+    year: Optional[int] = Query(None, description="年份"),
+    province: Optional[str] = Query(None, description="省份"),
+    subject_type: Optional[str] = Query(None, description="物理/历史/综合"),
+    page: int = Query(1, ge=1),
+    page_size: int = Query(20, ge=1, le=100),
+    db: DatabaseBackend = Depends(get_db),
+):
+    """一分一段表查询：按分数查位次，或按位次查分数。"""
+    conditions = []
+    params: list = []
+    if score is not None:
+        conditions.append("score = ?")
+        params.append(score)
+    if rank is not None:
+        conditions.append("rank = ?")
+        params.append(rank)
+    if year:
+        conditions.append("year = ?")
+        params.append(year)
+    if province:
+        conditions.append("province = ?")
+        params.append(province)
+    if subject_type:
+        conditions.append("subject_type = ?")
+        params.append(subject_type)
+
+    where = ("WHERE " + " AND ".join(conditions)) if conditions else ""
+    offset = (page - 1) * page_size
+
+    count_sql = f"SELECT COUNT(*) as total FROM rank_score_tables {where}"
+    count_row = await db.fetch_one(count_sql, tuple(params))
+    total = count_row["total"] if count_row else 0
+
+    data_sql = f"SELECT * FROM rank_score_tables {where} ORDER BY year DESC, score DESC LIMIT ? OFFSET ?"
+    rows = await db.fetch_all(data_sql, tuple(params) + (page_size, offset))
+    return {"total": total, "page": page, "page_size": page_size, "items": rows}
+
+
+@router.get("/rank-score/convert")
+async def convert_score_to_rank(
+    score: int = Query(..., description="分数"),
+    year: int = Query(..., description="年份"),
+    province: str = Query(..., description="省份"),
+    subject_type: str = Query("物理", description="物理/历史/综合"),
+    db: DatabaseBackend = Depends(get_db),
+):
+    """按分数查位次。"""
+    from zhinan.recommender.rank import RankConverter
+    converter = RankConverter(db)
+    rank_val = await converter.score_to_rank(score, year, province, subject_type)
+    return {"score": score, "year": year, "province": province, "subject_type": subject_type, "rank": rank_val}
 
 
 # ---------------------------------------------------------------------------
